@@ -373,6 +373,7 @@ Resources:
               cmake .
               make install
 
+              # Point cloud processing
               cd /nfs/mpi
               module load mpi
               wget ${PointCloudUrl}
@@ -383,6 +384,20 @@ Resources:
               unzip LAStools_221128.zip -d ./lib && rm -f LAStools_221128.zip
               (cd lib/LAStools && cmake . && make)
               (cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib64/openmpi/ && cd build && make)
+
+              cd build
+
+              # create a script to run the MPI program
+              cat > sbatch.sh <<EOF
+              #!/bin/bash
+              #SBATCH -o %x-%J.out
+              #SBATCH -t 00:20:00
+              #SBATCH --ntasks-per-node=1
+              #SBATCH --exclusive
+
+              mpirun ./rule-based-classifier-cpp -i ../data/ptR_18C.las -r 2
+              EOF
+
               chown -R ec2-user /nfs/mpi
 
               /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource HeadNode --region ${AWS::Region}
